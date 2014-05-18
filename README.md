@@ -52,11 +52,6 @@ you will need to request it and we can see about including it.
 TODO
 ----
 <ul>
-<li>
-The name campaign-finance_state_OH should be changed because python can't handle dashes in namespaces(I think?)
-</li>
-<li>Add an option to see all files on the FTP site</li>
-<li>Figure out how to do file system graphs in MD(for this readme)</li>
 <li>Find out if some files I am excluding are in fact relevant</li>
 <li>Test a full download and address the inevitable errors.</li>
 <li>Unit tests.</li>
