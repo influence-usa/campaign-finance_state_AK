@@ -25,7 +25,7 @@ def main(argv):
         if opts[0][0] == '-p':
             state.print_files()
         if opts[0][0] == '-d':
-            state.convert_text_file_to_json()
+            state.download_to_json()
         if opts[0][0] == '-r':
             state.report()
 
@@ -33,4 +33,3 @@ def main(argv):
         os.system("python tests/test_suite_1.py")
 if __name__ == "__main__":
     main(sys.argv[1:])
- 

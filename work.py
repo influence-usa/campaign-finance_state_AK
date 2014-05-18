@@ -46,7 +46,7 @@ class AK_lobby(object):
                 for h in hrefs:
                     url = h.get_attribute("href")
                     a_text = re.sub(' +', '_', h.text)
-                    lst.append([year + "_" + a_text, url,year])
+                    lst.append([year + "_" + a_text, url, year])
         return [l for l in lst if not re.search("Employer", l[0])]
 
     def print_files(self):
@@ -74,7 +74,7 @@ class AK_lobby(object):
             for pagenum in xrange(pdffile.getNumPages()):
                 currentpage = pdffile.getPage(pagenum)
                 writer.addPage(currentpage)
-                outputstream = file(self.download_dir +  "/" +
+                outputstream = file(self.download_dir + "/" +
                                     _file[0] + ".pdf", "w+")
                 writer.write(outputstream)
                 outputstream.close()
@@ -85,9 +85,8 @@ class AK_lobby(object):
         for _file in self.list_files():
             print "Converting " + _file[0] + " from pdf to text."
             fin = open(os.getcwd() + "/downloads/" + _file[0] + ".pdf", 'r')
-            fpout = open(
-               self.text_conv_dir + "/" 
-                + _file[0] + ".txt", 'w+')
+            fpout = open(self.text_conv_dir + "/"
+                         + _file[0] + ".txt", 'w+')
             pdfdata = fin.read()
             tempf = tempfile.NamedTemporaryFile()
             tempf.write(pdfdata)
@@ -109,7 +108,7 @@ class AK_lobby(object):
         txt_split = [line for line in txt.split('\n') if line.strip()]
         spacere = re.compile("^\s{50}.*?")
         txt_split = [line for line in txt_split
-                        if not spacere.match(line)]
+                     if not spacere.match(line)]
         totalre = re.compile("     TOTAL")
         txt_split = [line for line in txt_split if not totalre.search(line)]
         txt_split = [
@@ -123,29 +122,31 @@ class AK_lobby(object):
         a1 = "$0.00"
         a1non = "$0.00"
         lobbyist = ""
+        reimburse_split = []
         for i, line in enumerate(txt_split):
             if line[0] is not " ":
                 lobbyist = line[:100].strip()
                 match = re.compile(".*(\$\d.*\s).*(\$\d.*)").match(line)
                 if match is not None:
-                    a1 = match.group(1)[:-1]
-                    a1non = match.group(2)
+                    a1 = match.group(1)[:-1].strip()
+                    a1non = match.group(2).strip()
                 else:
                     a1 = "$0.00"
                     a1non = "$0.00"
+                reimburse_split.append(
+                    lobbyist.strip() + '*!*' + a1 + '*!*' + a1non)
             else:
                 match = re.compile("^\s{5}.*").match(line)
                 if match:
                     txt_split[i] = lobbyist + "    " + txt_split[i].strip()
-                    txt_split[i] = txt_split[i] + '    ' + a1 + '    ' + a1non
 
                 txt_split[i] = re.sub('  +', '*!*', txt_split[i])
 
         txt_split = [line for line in txt_split if
                      re.compile("(\*\!\*)").search(line)]
-        return txt_split
+        return txt_split, reimburse_split
 
-    def t_split_to_dictionary_list(self, txt_split, header_list,year):
+    def t_split_to_dictionary_list(self, txt_split, header_list, year, _type = ""):
         final_dict_list = []
         bad_lst = []
         i = 0
@@ -155,38 +156,47 @@ class AK_lobby(object):
             dict_tmp = {}
             dict_tmp["id"] = i
             bad = False
-            for j in range(0, 7):
+            for j in range(0, len(header_list)):
                 try:
                     dict_tmp[header_list[j]] = lst[j]
                 except:
                     bad = True
-            if bad == True:
+            if bad is True:
                 bad_lst.append("--".join(lst))
             final_dict_list.append(dict_tmp)
-        if len(bad_lst) > 0 :
-            fpout = open(self.data_dir + "/" + year + "/bad_data.txt","w+")
+        if len(bad_lst) > 0:
+            fpout = open(self.data_dir + "/" + year + "/" +
+                         _type + "bad_data.txt", "w+")
             fpout.write("\n".join(bad_lst))
             fpout.close()
         return final_dict_list
 
     def text_to_json(self, txt, fname, year):
-        header_list = ['Lobbyist', 'Employer', 'Fee','Reimbursable'
-                      ,'Non Reimbursable','Schedule A1 Reimbursable',
-                      'Schedule A1 Non Reimbursable']
+        header_list = ['Lobbyist', 'Employer', 'Fee', 'Reimbursable',
+                       'Non Reimbursable']
+        reimburse_header = ['Lobbyist', 'Schedule A1 Reimbursable',
+                            'Schedule A1 Non Reimbursable']
         txt_split = self.isolate_txt(txt, fname)
-        txt_split = self.make_rows(txt_split)
+        txt_split, reimburse_split = self.make_rows(txt_split)
         final_dict_list = self.t_split_to_dictionary_list(
-            txt_split, header_list,year)
+            txt_split, header_list, year)
+        final_reimburse_list = self.t_split_to_dictionary_list(
+            reimburse_split, reimburse_header, year, "reimburse_")
         for d in final_dict_list:
             with open(self.data_dir + "/" + year + "/" + str(d['id']) +
                       ".json", 'wb') as outfile:
+                json.dump(d, outfile)
+        for d in final_reimburse_list:
+            with open(self.data_dir + "/" + year + "/reimburse/"
+                      + str(d['id']) + ".json", 'wb') as outfile:
                 json.dump(d, outfile)
 
     def convert_text_file_to_json(self):
         for _file in self.list_files():
             print "Converting - " + _file[0]
-            if not os.path.exists(self.data_dir + "/" +  _file[2]):
-                os.makedirs(self.data_dir + "/" +  _file[2])
+            if not os.path.exists(self.data_dir + "/" + _file[2]):
+                os.makedirs(self.data_dir + "/" + _file[2])
+                os.makedirs(self.data_dir + "/" + _file[2] + "/reimburse")
             fin = open(os.getcwd() +
                        "/downloads/text_conv/" + _file[0] + ".txt", 'r')
             txt = fin.read()
@@ -205,11 +215,14 @@ class AK_lobby(object):
             if not os.path.exists(current_directory + "/downloads/text_conv"):
                 os.makedirs(current_directory + "/downloads/text_conv")
 
+    def download_to_json(self):
+        self.download_pdfs()
+        self.convert_pdfs_to_text()
+        self.convert_text_file_to_json()
+        self.report()
 
     def report(self):
         for direct in os.walk(self.data_dir).next()[1]:
             files = os.walk(self.data_dir + "/" + direct).next()[2]
-            print  direct + ": " + str(len(files)) + \
+            print direct + ": " + str(len(files)) + \
                 " files"
-
-
