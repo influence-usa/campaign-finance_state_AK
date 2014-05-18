@@ -226,3 +226,11 @@ class AK_lobby(object):
             files = os.walk(self.data_dir + "/" + direct).next()[2]
             print direct + ": " + str(len(files)) + \
                 " files"
+            with open(self.data_dir + "/" + direct + "/bad_data.txt") as f:
+                for i, l in enumerate(f):
+                    pass
+            print "--Bad_data: " + str(i) + " records"
+            files = os.walk(self.data_dir + "/" + direct + "/reimburse").next()[2]
+            print "----------Reimburse: " + str(len(files)) + \
+                " files"
+

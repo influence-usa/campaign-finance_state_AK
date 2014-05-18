@@ -1,0 +1,5 @@
+argparse==1.2.1
+lxml==3.3.5
+pyPdf==1.13
+selenium==2.41.0
+wsgiref==0.1.2
